@@ -1,5 +1,5 @@
 // https://webgl2fundamentals.org/webgl/lessons/webgl-3d-orthographic.html
-import { createProgramFromSources, resizeCanvasToDisplaySize, m4 } from "../../../../helpers";
+import { createProgramFromSources, resizeCanvasToDisplaySize, m4 } from "../../../../../helpers";
 
 const vertexShaderSource = `#version 300 es
 

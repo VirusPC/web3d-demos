@@ -1,6 +1,6 @@
 "use client"
 import { useLayoutEffect, useRef } from "react";
-import { render } from "./perspective";
+import { render } from "./orthographic";
 
 export default function Demo() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -8,7 +8,7 @@ export default function Demo() {
     const canvas = canvasRef.current;
     canvas && render(canvas);
   }, []);
-  return <div className="p-8">
+  return <div className="flex flex-wrap py-8">
     <canvas id="c" ref={canvasRef}></canvas>
   </div>
 }

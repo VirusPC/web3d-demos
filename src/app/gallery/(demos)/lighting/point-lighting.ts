@@ -1,26 +1,33 @@
 // https://webgl2fundamentals.org/webgl/lessons/webgl-3d-orthographic.html
-import { createProgramFromSources, resizeCanvasToDisplaySize, m4 } from "../../../../helpers";
+import { createProgramFromSources, resizeCanvasToDisplaySize, m4 } from "../../../../../helpers";
+/**
+ * 只考虑化简后(不考虑光源距离)的漫反射. 不考虑高光和环境光.
+ * 虽然此程序用到的着色频率是逐像素。但由于传入的normal vector问题，效果和逐面一样。。。
+ * 1. 定义各个顶点的normal vector 和 光源点
+ * 2. 光源点 - 物体表面点，得到光源向量
+ * 2. normal vector 和光源向量都先做插值，再在fragment shader里normalize到长度为1. 二者相乘得到余弦值，最后乘以颜色。
+ * 3. 对官网代码做了化简：光源和normal vector都是在model space下的 https://webgl2fundamentals.org/webgl/lessons/webgl-3d-lighting-point.html
+*/
 
 const vertexShaderSource = `#version 300 es
 
 // an attribute is an input (in) to a vertex shader.
 // It will receive data from a buffer
 in vec4 a_position;
-in vec4 a_color;
+in vec3 a_normal;
 
 // A matrix to transform the positions by
 uniform mat4 u_matrix;
+uniform vec3 u_lightWorldPosition; // 不考虑坐标变换, 相对于模型坐标的光源位置
 
-// a varying the color to the fragment shader
-out vec4 v_color;
+out vec3 v_normal;
+out vec3 v_surfaceToLight;
 
 // all shaders have a main function
 void main() {
-  // Multiply the position by the matrix.
   gl_Position = u_matrix * a_position;
-
-  // Pass the color to the fragment shader.
-  v_color = a_color;
+  v_normal =  a_normal; // 不考虑坐标变换, 相对模型坐标的normal
+  v_surfaceToLight = u_lightWorldPosition -a_position.xyz;
 }
 `;
 
@@ -28,21 +35,35 @@ const fragmentShaderSource = `#version 300 es
 
 precision highp float;
 
-// the varied color passed from the vertex shader
-in vec4 v_color;
+in vec3 v_normal;
+in vec3 v_surfaceToLight;
+
+uniform vec4 u_color;
 
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
 void main() {
-  outColor = v_color;
+  // because v_normal is a varying it's interpolated
+  // so it will not be a unit vector. Normalizing it
+  // will make it a unit vector again
+  vec3 normal = normalize(v_normal);
+  vec3 surfaceToLightDirection = normalize(v_surfaceToLight);
+ 
+  // compute the light by taking the dot product
+  // of the normal to the light's reverse direction
+  float light = dot(normal, surfaceToLightDirection);
+ 
+  outColor = u_color;
+ 
+  // Lets multiply just the color portion (not the alpha)
+  // by the light
+  outColor.rgb *= light;
 }
 `;
 
 
 export function render(canvas: HTMLCanvasElement) {
-  canvas.width = 300;
-  canvas.height = 300;
   const gl = canvas.getContext("webgl2");
   if (!gl) {
     return;
@@ -56,54 +77,41 @@ export function render(canvas: HTMLCanvasElement) {
 
   // look up where the vertex data needs to go.
   const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-  const colorAttributeLocation = gl.getAttribLocation(program, "a_color");
+  const normalLocation = gl.getAttribLocation(program, "a_normal");
 
   // look up uniform locations
   const matrixLocation = gl.getUniformLocation(program, "u_matrix");
+  const colorLocation = gl.getUniformLocation(program, "u_color");
+  const lightWorldPositionLocatoin = gl.getUniformLocation(program, "u_lightWorldPosition");
 
-  // Create a buffer
-  const positionBuffer = gl.createBuffer();
-
-  // Create a vertex array object (attribute state)
   const vao = gl.createVertexArray();
-
-  // and make it the one we're currently working with
   gl.bindVertexArray(vao);
 
-  // Turn on the attribute
-  gl.enableVertexAttribArray(positionAttributeLocation);
-
-  // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
+  const positionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  // Set Geometry.
   setGeometry(gl);
 
-  // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
   let size = 3;          // 3 components per iteration
-  let type: number = gl.FLOAT;   // the data is 32bit floats
+  let type = gl.FLOAT;   // the data is 32bit floats
   let normalize = false; // don't normalize the data
   let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
   let offset = 0;        // start at the beginning of the buffer
   gl.vertexAttribPointer(
       positionAttributeLocation, size, type, normalize, stride, offset);
+  gl.enableVertexAttribArray(positionAttributeLocation);
 
-  // create the color buffer, make it the current ARRAY_BUFFER
-  // and copy in the color values
-  const colorBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  setColors(gl);
-
-  // Turn on the attribute
-  gl.enableVertexAttribArray(colorAttributeLocation);
-
-  // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
+  const normalBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+  setNormals(gl);
   size = 3;          // 3 components per iteration
-  type = gl.UNSIGNED_BYTE;   // the data is 8bit unsigned bytes
-  normalize = true;  // convert from 0-255 to 0.0-1.0
-  stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next color
+  type = gl.FLOAT;   // the data is 32bit floats
+  normalize = false; // don't normalize the data
+  stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
   offset = 0;        // start at the beginning of the buffer
   gl.vertexAttribPointer(
-      colorAttributeLocation, size, type, normalize, stride, offset);
+      normalLocation, size, type, normalize, stride, offset);
+  gl.enableVertexAttribArray(normalLocation);
+
 
 
   function radToDeg(r: number) {
@@ -116,8 +124,7 @@ export function render(canvas: HTMLCanvasElement) {
 
   // First let's make some variables
   // to hold the translation,
-  const translation = [45, 50, 0];
-  // const translation = [-150, 0, -360];
+  const translation = [45, 150, 0];
   const rotation = [degToRad(40), degToRad(25), degToRad(325)];
   const scale = [1, 1, 1];
 
@@ -191,6 +198,8 @@ export function render(canvas: HTMLCanvasElement) {
 
     // Set the matrix.
     gl.uniformMatrix4fv(matrixLocation, false, matrix);
+    gl.uniform4fv(colorLocation, new Float32Array([0.2, 1, 0.2, 1]));
+    gl.uniform3fv(lightWorldPositionLocatoin, new Float32Array([50, 70, 60]));
 
     // Draw the geometry.
     const primitiveType = gl.TRIANGLES;
@@ -337,138 +346,135 @@ function setGeometry(gl: WebGL2RenderingContext) {
       gl.STATIC_DRAW);
 }
 
-// Fill the current ARRAY_BUFFER buffer with colors for the 'F'.
-function setColors(gl: WebGL2RenderingContext) {
-  gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Uint8Array([
+function setNormals(gl: WebGL2RenderingContext) {
+  var normals = new Float32Array([
           // left column front
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+ 
           // top rung front
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+ 
           // middle rung front
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-        200,  70, 120,
-
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+ 
           // left column back
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+ 
           // top rung back
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+ 
           // middle rung back
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-        80, 70, 200,
-
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+          0, 0, -1,
+ 
           // top
-        70, 200, 210,
-        70, 200, 210,
-        70, 200, 210,
-        70, 200, 210,
-        70, 200, 210,
-        70, 200, 210,
-
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0,
+ 
           // top rung right
-        200, 200, 70,
-        200, 200, 70,
-        200, 200, 70,
-        200, 200, 70,
-        200, 200, 70,
-        200, 200, 70,
-
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+ 
           // under top rung
-        210, 100, 70,
-        210, 100, 70,
-        210, 100, 70,
-        210, 100, 70,
-        210, 100, 70,
-        210, 100, 70,
-
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+ 
           // between top rung and middle
-        210, 160, 70,
-        210, 160, 70,
-        210, 160, 70,
-        210, 160, 70,
-        210, 160, 70,
-        210, 160, 70,
-
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+ 
           // top of middle rung
-        70, 180, 210,
-        70, 180, 210,
-        70, 180, 210,
-        70, 180, 210,
-        70, 180, 210,
-        70, 180, 210,
-
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0,
+          0, 1, 0,
+ 
           // right of middle rung
-        100, 70, 210,
-        100, 70, 210,
-        100, 70, 210,
-        100, 70, 210,
-        100, 70, 210,
-        100, 70, 210,
-
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+ 
           // bottom of middle rung.
-        76, 210, 100,
-        76, 210, 100,
-        76, 210, 100,
-        76, 210, 100,
-        76, 210, 100,
-        76, 210, 100,
-
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+ 
           // right of bottom
-        140, 210, 80,
-        140, 210, 80,
-        140, 210, 80,
-        140, 210, 80,
-        140, 210, 80,
-        140, 210, 80,
-
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+          1, 0, 0,
+ 
           // bottom
-        90, 130, 110,
-        90, 130, 110,
-        90, 130, 110,
-        90, 130, 110,
-        90, 130, 110,
-        90, 130, 110,
-
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+          0, -1, 0,
+ 
           // left side
-        160, 160, 220,
-        160, 160, 220,
-        160, 160, 220,
-        160, 160, 220,
-        160, 160, 220,
-        160, 160, 220,
-      ]),
-      gl.STATIC_DRAW);
+          -1, 0, 0,
+          -1, 0, 0,
+          -1, 0, 0,
+          -1, 0, 0,
+          -1, 0, 0,
+          -1, 0, 0,
+  ]);
+  gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
 }

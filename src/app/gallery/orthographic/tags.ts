@@ -1,1 +1,0 @@
-export default ["webgl2", "projection"];
