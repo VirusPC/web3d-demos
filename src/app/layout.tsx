@@ -1,6 +1,9 @@
 import './globals.css'
 import '../../assets/iconfont/iconfont.css'
+import { Inter } from 'next/font/google'
 import Header from '../../components/header'
+
+const inter = Inter({ subsets: ['latin'] })
 
 
 export const metadata = {
@@ -18,7 +21,9 @@ export default function RootLayout({
       <body className='bg-white'>
         {/* <Header/> */}
         <Header/>
+        <main className="relative isolate px-6 pt-14 lg:px-8">
         {children}
+        </main>
       </body>
     </html>
   )

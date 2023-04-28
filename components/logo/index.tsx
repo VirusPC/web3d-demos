@@ -1,9 +1,14 @@
 import styles from "./index.module.scss";
+import Link from "next/link";
+// import classNames from "classnames";
 
-export default function Logo() {
-  return <a href="#" className="-m-1.5 p-1.5 text-center flex items-end">
+// type Props = {
+//   size?: 'sm' | 'md' | 'lg'
+// }
+export default function Logo({size = 'md'}) {
+  return <Link href="/" className={`-m-1.5 p-1.5 text-center flex items-end`}>
     <span className={` text-lg ${styles["text3d"]}`}>Web 3D </span>
     &nbsp;
-    <span className='text-sm'>Demos</span>
-  </a>
+    <span className=''>Demos</span>
+  </Link>
 }
