@@ -1,5 +1,6 @@
 import './globals.css'
 import '../../assets/iconfont/iconfont.css'
+import 'antd/dist/reset.css'
 import { Inter } from 'next/font/google'
 import Header from '../../components/header'
 
