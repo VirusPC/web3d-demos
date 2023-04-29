@@ -1,4 +1,5 @@
 // https://webgl2fundamentals.org/webgl/lessons/webgl-3d-orthographic.html
+import { Controller } from "../../../../../components/control-panel/types";
 import { createProgramFromSources, resizeCanvasToDisplaySize, m4 } from "../../../../../helpers";
 
 const vertexShaderSource = `#version 300 es
@@ -141,29 +142,6 @@ export function render(canvas: HTMLCanvasElement) {
   // webglLessonsUI.setupSlider("#scaleY", {value: scale[1], slide: updateScale(1), min: -5, max: 5, step: 0.01, precision: 2});
   // webglLessonsUI.setupSlider("#scaleZ", {value: scale[2], slide: updateScale(2), min: -5, max: 5, step: 0.01, precision: 2});
 
-  // function updatePosition(index) {
-  //   return function(event, ui) {
-  //     translation[index] = ui.value;
-  //     drawScene();
-  //   };
-  // }
-
-  // function updateRotation(index) {
-  //   return function(event, ui) {
-  //     const angleInDegrees = ui.value;
-  //     const angleInRadians = degToRad(angleInDegrees);
-  //     rotation[index] = angleInRadians;
-  //     drawScene();
-  //   };
-  // }
-
-  // function updateScale(index) {
-  //   return function(event, ui) {
-  //     scale[index] = ui.value;
-  //     drawScene();
-  //   };
-  // }
-
   // Draw the scene.
   function drawScene() {
     if(!gl || !program) return;
@@ -207,6 +185,74 @@ export function render(canvas: HTMLCanvasElement) {
     const count = 16 * 6;
     gl.drawArrays(primitiveType, offset, count);
   }
+
+  function updatePosition(index: number) {
+    return function(value: any) {
+      translation[index] = value;
+      drawScene();
+    };
+  }
+
+  function updateRotation(index: number) {
+    return function(value: any) {
+      const angleInDegrees = value;
+      const angleInRadians = degToRad(angleInDegrees);
+      rotation[index] = angleInRadians;
+      drawScene();
+    };
+  }
+
+  function updateScale(index: number) {
+    return function(value: any) {
+      scale[index] = value;
+      drawScene();
+    };
+  }
+  const controllers: Controller[] = [{
+    type: "number",
+    label: "x",
+    default: translation[0],
+    range: [-150, 100],
+    callback: updatePosition(0)
+  },
+  {
+    type: "number",
+    label: "y",
+    default: translation[1],
+    range: [0, 300],
+    callback: updatePosition(1)
+  },
+  {
+    type: "number",
+    label: "z",
+    default: translation[2],
+    range: [-500, -200],
+    callback: updatePosition(2)
+  },{
+    type: "number",
+    label: "angleX",
+    default: radToDeg(rotation[0]),
+    range: [0, 360],
+    callback: updateRotation(0)
+  },
+  {
+    type: "number",
+    label: "angleY",
+    default: radToDeg(rotation[1]),
+    range: [0, 360],
+    callback: updateRotation(1)
+  },
+  {
+    type: "number",
+    label: "angleZ",
+    default: radToDeg(rotation[2]),
+    range: [0, 360],
+    callback: updateRotation(2)
+  }
+
+]
+
+  return controllers;
 }
 
 // Fill the current ARRAY_BUFFER buffer
