@@ -12,7 +12,7 @@ export function getSpherePositionsAndNormals(radius = 1, widthSegments = 32, hei
   const positionAttr = sphere.getAttribute("position") as BufferAttribute;
   // three.js 默认是face normal
   const normalAttr = sphere.getAttribute("normal") as BufferAttribute;
-  const _indices = [...(sphere.index?.array as Uint16Array | Uint32Array)];
+  const _indices = Array.from((sphere.index?.array as Uint16Array | Uint32Array));
   const _positions = (positionAttr.array as Float32Array);
   const _vertexNormals = (normalAttr.array as Float32Array).slice(0);
 

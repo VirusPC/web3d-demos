@@ -28,7 +28,7 @@ const ControlPanel: React.FC<Props> = ({ id, controllers = [] }) => {
         {c.type === "boolean"
           ? <Switch id={`id-${c.label}`} className="w-full" defaultChecked={c.default} onChange={c.callback} />
           : c.type === "number"
-            ? <Slider id={`id-${c.label}`} className="w-full" min={c.range[0]} max={c.range[1]} defaultValue={c.default} onChange={c.callback} />
+            ? <Slider id={`id-${c.label}`} className="w-full" min={c.range[0]} max={c.range[1]} step={0.1} defaultValue={c.default} onChange={c.callback} />
             : c.type === "radio"
               ? <RadioGroup id={`id-${c.label}`} className="w-full" value={c.default} onChange={c.callback}>
                 {c.options.map(option => (

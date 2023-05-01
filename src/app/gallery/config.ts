@@ -20,6 +20,10 @@ const config: Config[] = [{
   name: "shading-frequency",
   width: "w-96",
   tags: ["webgl2", "shading frequency", "flat shading", "gouraud shading", "phong shading"]
+}, {
+  name: "bezier-curve",
+  width: "w-40",
+  tags: ["webgl2", "bezier curve"]
 }];
 
 export default config;
