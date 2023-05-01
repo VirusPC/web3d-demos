@@ -10,6 +10,7 @@ export type NumberController = {
   label: string,
   range: number[],
   default: number,
+  step?: number,
   callback: (value: number|null) =>  void;
 }
 export type RadioController = {

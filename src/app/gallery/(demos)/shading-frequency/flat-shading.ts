@@ -38,8 +38,8 @@ void main() {
 `;
 
 export function render(canvas: HTMLCanvasElement, widthSegments = 32, heightSegments = 32) {
-  canvas.width = 500;
-  canvas.height = 500;
+  canvas.width = 400;
+  canvas.height = 400;
   const gl = canvas.getContext("webgl2");
   if (!gl) {
     return;
