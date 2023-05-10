@@ -24,6 +24,10 @@ const config: Config[] = [{
   name: "bezier-curve",
   width: "w-40",
   tags: ["webgl2", "bezier curve"]
+}, {
+  name: "blinn-phong-model",
+  width: "w-40",
+  tags: ["webgl2", "blinn phong model"]
 }];
 
 export default config;
