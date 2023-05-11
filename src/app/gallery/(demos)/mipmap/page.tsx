@@ -25,7 +25,7 @@ export default function Demo() {
     // setControllers(ctrls);
   }, []);
   return <div className="flex flex-wrap py-8">
-    <canvas ref={canvasRef1} width={800} height={800}></canvas>
+    <canvas ref={canvasRef1} width={600} height={600}></canvas>
     <div className="">
       <div className="p-6">
         click canvas to switch texture
