@@ -3,6 +3,8 @@ import { Controller } from "../../../../../components/control-panel/types";
 import { createProgramFromSources, degToRad, resizeCanvasToDisplaySize } from "../../../../../helpers";
 import { Matrix4, Vector4 } from "three";
 
+// based on  https://webgl2fundamentals.org/webgl/lessons/webgl-3d-lighting-point.html
+
 const vertexShaderSource = `#version 300 es
 in vec4 a_position;
 in vec3 a_normal;

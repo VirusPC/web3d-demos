@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Tag from '../../../components/Tag';
 import classNames from 'classnames';
+import { capitalCase } from 'change-case';
 // import {readdir} from 'fs/promises';
 // import path from 'path';
 
@@ -12,7 +13,7 @@ export default async function Gallery(){
       {/* <div className="columns-2 gap-2 md:columns-4 md:gap-4 lg:columns-5 lg:gap-5"> */}
       {/* <div className=""> */}
         {demoInfos.map(demo => 
-          (<div key={demo.name} className={classNames('h-48 p-2 m-5 shadow rounded flex flex-nowrap flex-col', demo.width)}>
+          (<div key={demo.name} className={classNames(' h-56 p-2 m-5 shadow rounded flex flex-nowrap flex-col', demo.width)}>
               <div className='relative w-full h-full'>
                 <Link href={`/gallery/${demo.name}`} >
                     <Image src={`/images/${demo.name}.png`} alt={demo.name} fill={true}/>
@@ -21,6 +22,7 @@ export default async function Gallery(){
               <div className='flex flex-wrap justify-center align-middle h-auto min-h-9 w-scroll'>
                 {demo.tags.map((tag) => (<Tag key={tag} name={tag} type={""} className='mx-1 my-0.5'/>))}
               </div>
+              <div className=' text-center text-lg font-bold'>{capitalCase(demo.name)}</div>
             </div>)
         )}
       {/* </div> */}
