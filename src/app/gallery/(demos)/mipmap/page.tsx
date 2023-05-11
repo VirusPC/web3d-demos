@@ -37,6 +37,9 @@ export default function Demo() {
           ))
         }
       </div>
+      <div className="p-6">
+        ps: minFilter: pixel &lt; texel. magFIlter: pixel &gt; texel.
+      </div>
 
     </div>
 
