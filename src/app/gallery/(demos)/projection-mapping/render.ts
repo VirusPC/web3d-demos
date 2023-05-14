@@ -4,8 +4,14 @@ import * as twgl from "twgl.js";
 import { degToRad, loadImageTexture } from "../../../../../helpers";
 import { Controller } from "../../../../../components/control-panel/types";
 
-'use strict';
-
+/**
+ * 核心：假设某个位置有一个texture面（类似camera），想办法将物体顶点投影回这个面
+ * 1. 视空间中texture的中心点为一个相机，将顶点旋转到相机前
+ * 2. 顶点向texture投影
+ * 3. 将[-1, 1]的clip空间坐标变换到[0, 1]
+ * 
+ * 核心方法在drawScene、vs和fs里
+ */
 
 const vs = `#version 300 es
 in vec4 a_position;
@@ -241,16 +247,18 @@ export function render(canvas: HTMLCanvasElement): Controller[] {
              0.1,                      // near
              200);                     // far
 
-    let textureMatrix = twgl.m4.identity();
-    textureMatrix = twgl.m4.translate(textureMatrix, [0.5, 0.5, 0.5]);
-    textureMatrix = twgl.m4.scale(textureMatrix, [0.5, 0.5, 0.5]);
-    textureMatrix = twgl.m4.multiply(textureMatrix, textureProjectionMatrix);
+    const textureMatrix = twgl.m4.identity();
+    twgl.m4.translate(textureMatrix, [0.5, 0.5, 0.5], textureMatrix);  //从[-.5, 0.5]到[0,1]
+    twgl.m4.scale(textureMatrix, [0.5, 0.5, 0.5], textureMatrix);  // 从[-1, 1]到[-0.5, 0.5]
+    twgl.m4.multiply(textureMatrix, textureProjectionMatrix, textureMatrix);
     // use the inverse of this world matrix to make
     // a matrix that will transform other positions
     // to be relative this this world space.
-    textureMatrix = twgl.m4.multiply(
+    twgl.m4.multiply(
         textureMatrix,
-        twgl.m4.inverse(textureWorldMatrix));
+        twgl.m4.inverse(textureWorldMatrix),
+        textureMatrix
+        );
 
     gl.useProgram(textureProgramInfo.program);
 
@@ -434,6 +442,19 @@ export function render(canvas: HTMLCanvasElement): Controller[] {
       render();
     },
     step: 0.01
+  }, {
+    type: "checkbox",
+    label: "",
+    options: [{label: "perspective", value: "perspective"}],
+    default: ["perspective"],
+    callback: (values) => {
+      if(values.length === 1) {
+        settings.perspective = true;
+      } else {
+        settings.perspective = false;
+      }
+      render();
+    }
   }, {
     type: "checkbox",
     label: "",
