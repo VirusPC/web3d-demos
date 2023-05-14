@@ -1,5 +1,10 @@
 'use strict';
 
+import * as twgl from "twgl.js";
+import { m4 } from "twgl.js";
+import { degToRad, loadImageTexture } from "../../../../../helpers";
+import { Controller } from "../../../../../components/control-panel/types";
+
 const vs = `#version 300 es
 in vec4 a_position;
 in vec2 a_texcoord;
@@ -99,10 +104,10 @@ void main() {
 }
 `;
 
-export function render(canvas: HTMLCanvasElement) {
+export function render(canvas: HTMLCanvasElement): Controller[] {
   const gl = canvas.getContext('webgl2');
   if (!gl) {
-    return;
+    return [];
   }
 
   // setup GLSL programs
@@ -232,10 +237,6 @@ export function render(canvas: HTMLCanvasElement) {
       depthTexture,         // texture
       0);                   // mip level
 
-  function degToRad(d) {
-    return d * Math.PI / 180;
-  }
-
   const settings = {
     cameraX: 6,
     cameraY: 12,
@@ -251,21 +252,7 @@ export function render(canvas: HTMLCanvasElement) {
     fieldOfView: 120,
     bias: -0.006,
   };
-  webglLessonsUI.setupUI(document.querySelector('#ui'), settings, [
-    { type: 'slider',   key: 'cameraX',    min: -10, max: 10, change: render, precision: 2, step: 0.001, },
-    { type: 'slider',   key: 'cameraY',    min:   1, max: 20, change: render, precision: 2, step: 0.001, },
-    { type: 'slider',   key: 'posX',       min: -10, max: 10, change: render, precision: 2, step: 0.001, },
-    { type: 'slider',   key: 'posY',       min:   1, max: 20, change: render, precision: 2, step: 0.001, },
-    { type: 'slider',   key: 'posZ',       min:   1, max: 20, change: render, precision: 2, step: 0.001, },
-    { type: 'slider',   key: 'targetX',    min: -10, max: 10, change: render, precision: 2, step: 0.001, },
-    { type: 'slider',   key: 'targetY',    min:   0, max: 20, change: render, precision: 2, step: 0.001, },
-    { type: 'slider',   key: 'targetZ',    min: -10, max: 20, change: render, precision: 2, step: 0.001, },
-    { type: 'slider',   key: 'projWidth',  min:   0, max: 100, change: render, precision: 2, step: 0.001, },
-    { type: 'slider',   key: 'projHeight', min:   0, max: 100, change: render, precision: 2, step: 0.001, },
-    { type: 'checkbox', key: 'perspective', change: render, },
-    { type: 'slider',   key: 'fieldOfView', min:  1, max: 179, change: render, },
-    { type: 'slider',   key: 'bias',       min:  -0.01, max: 0.00001, change: render, precision: 4, step: 0.0001, },
-  ]);
+
 
   const fieldOfViewRadians = degToRad(60);
 
@@ -274,27 +261,30 @@ export function render(canvas: HTMLCanvasElement) {
     u_colorMult: [0.5, 0.5, 1, 1],  // lightblue
     u_color: [1, 0, 0, 1],
     u_texture: checkerboardTexture,
-    u_world: m4.translation(0, 0, 0),
+    u_world: m4.translation([0, 0, 0]),
   };
   const sphereUniforms = {
     u_colorMult: [1, 0.5, 0.5, 1],  // pink
     u_color: [0, 0, 1, 1],
     u_texture: checkerboardTexture,
-    u_world: m4.translation(2, 3, 4),
+    u_world: m4.translation([2, 3, 4]),
   };
   const cubeUniforms = {
     u_colorMult: [0.5, 1, 0.5, 1],  // lightgreen
     u_color: [0, 0, 1, 1],
     u_texture: checkerboardTexture,
-    u_world: m4.translation(3, 1, 0),
+    u_world: m4.translation([3, 1, 0]),
   };
 
   function drawScene(
-      projectionMatrix,
-      cameraMatrix,
-      textureMatrix,
-      lightWorldMatrix,
-      programInfo) {
+      projectionMatrix: m4.Mat4,
+      cameraMatrix: m4.Mat4,
+      textureMatrix: m4.Mat4,
+      lightWorldMatrix: m4.Mat4,
+      programInfo: twgl.ProgramInfo) {
+
+    if(!gl) return;
+
     // Make a view matrix from the camera matrix.
     const viewMatrix = m4.inverse(cameraMatrix);
 
@@ -348,7 +338,10 @@ export function render(canvas: HTMLCanvasElement) {
 
   // Draw the scene.
   function render() {
-    twgl.resizeCanvasToDisplaySize(gl.canvas);
+    if(!gl) return;
+    const canvas = gl.canvas as HTMLCanvasElement;
+
+    twgl.resizeCanvasToDisplaySize(canvas);
 
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
@@ -365,7 +358,7 @@ export function render(canvas: HTMLCanvasElement) {
             settings.projWidth / settings.projHeight,
             0.5,  // near
             10)   // far
-        : m4.orthographic(
+        : m4.ortho(
             -settings.projWidth / 2,   // left
              settings.projWidth / 2,   // right
             -settings.projHeight / 2,  // bottom
@@ -392,8 +385,8 @@ export function render(canvas: HTMLCanvasElement) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     let textureMatrix = m4.identity();
-    textureMatrix = m4.translate(textureMatrix, 0.5, 0.5, 0.5);
-    textureMatrix = m4.scale(textureMatrix, 0.5, 0.5, 0.5);
+    textureMatrix = m4.translate(textureMatrix, [0.5, 0.5, 0.5]);
+    textureMatrix = m4.scale(textureMatrix, [0.5, 0.5, 0.5]);
     textureMatrix = m4.multiply(textureMatrix, lightProjectionMatrix);
     // use the inverse of this world matrix to make
     // a matrix that will transform other positions
@@ -403,7 +396,7 @@ export function render(canvas: HTMLCanvasElement) {
         m4.inverse(lightWorldMatrix));
 
     // Compute the projection matrix
-    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    const aspect = canvas.clientWidth / canvas.clientHeight;
     const projectionMatrix =
         m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
 
@@ -448,6 +441,114 @@ export function render(canvas: HTMLCanvasElement) {
     }
   }
   render();
+  // webglLessonsUI.setupUI(document.querySelector('#ui'), settings, [
+  //   { type: 'slider',   key: 'cameraX',    min: -10, max: 10, change: render, precision: 2, step: 0.001, },
+  //   { type: 'slider',   key: 'cameraY',    min:   1, max: 20, change: render, precision: 2, step: 0.001, },
+  //   { type: 'slider',   key: 'posX',       min: -10, max: 10, change: render, precision: 2, step: 0.001, },
+  //   { type: 'slider',   key: 'posY',       min:   1, max: 20, change: render, precision: 2, step: 0.001, },
+  //   { type: 'slider',   key: 'posZ',       min:   1, max: 20, change: render, precision: 2, step: 0.001, },
+  //   { type: 'slider',   key: 'targetX',    min: -10, max: 10, change: render, precision: 2, step: 0.001, },
+  //   { type: 'slider',   key: 'targetY',    min:   0, max: 20, change: render, precision: 2, step: 0.001, },
+  //   { type: 'slider',   key: 'targetZ',    min: -10, max: 20, change: render, precision: 2, step: 0.001, },
+  //   { type: 'slider',   key: 'projWidth',  min:   0, max: 100, change: render, precision: 2, step: 0.001, },
+  //   { type: 'slider',   key: 'projHeight', min:   0, max: 100, change: render, precision: 2, step: 0.001, },
+  //   { type: 'checkbox', key: 'perspective', change: render, },
+  //   { type: 'slider',   key: 'fieldOfView', min:  1, max: 179, change: render, },
+  //   { type: 'slider',   key: 'bias',       min:  -0.01, max: 0.00001, change: render, precision: 4, step: 0.0001, },
+  // ]);
+  return [{
+    type: "number",
+    label: "cameraX",
+    default: settings.cameraX,
+    range: [-10, 10],
+    callback: (value) => {
+      if(value !== null) settings.cameraX = value;
+      render();
+    },
+    step: 0.1
+  },{
+    type: "number",
+    label: "cameraY",
+    default: settings.cameraY,
+    range: [1, 20],
+    callback: (value) => {
+      if(value !== null) settings.cameraY = value;
+      render();
+    },
+    step: 0.1
+  },{
+    type: "number",
+    label: "posX",
+    default: settings.posX,
+    range: [-10, 10],
+    callback: (value) => {
+      if(value !== null) settings.posX= value;
+      render();
+    },
+    step: 0.01
+  },{
+    type: "number",
+    label: "posY",
+    default: settings.posY,
+    range: [1, 20],
+    callback: (value) => {
+      if(value !== null) settings.posY= value;
+      render();
+    },
+    step: 0.01
+  },{
+    type: "number",
+    label: "posZ",
+    default: settings.posZ,
+    range: [1, 20],
+    callback: (value) => {
+      if(value !== null) settings.posZ= value;
+      render();
+    },
+    step: 0.01
+  },{
+    type: "number",
+    label: "targetX",
+    default: settings.targetX,
+    range: [-10, 10],
+    callback: (value) => {
+      if(value !== null) settings.targetX= value;
+      render();
+    },
+    step: 0.01
+  },{
+    type: "number",
+    label: "targetY",
+    default: settings.targetY,
+    range: [0, 20],
+    callback: (value) => {
+      if(value !== null) settings.targetY= value;
+      render();
+    },
+    step: 0.01
+  },{
+    type: "number",
+    label: "targetX",
+    default: settings.targetY,
+    range: [-10, 20],
+    callback: (value) => {
+      if(value !== null) settings.targetY= value;
+      render();
+    },
+    step: 0.01
+  }, {
+    type: "checkbox",
+    label: "",
+    options: [{label: "perspective", value: "perspective"}],
+    default: ["perspective"],
+    callback: (values) => {
+      if(values.length === 1) {
+        settings.perspective = true;
+      } else {
+        settings.perspective = false;
+      }
+      render();
+    }
+  }];
 }
 
-main();

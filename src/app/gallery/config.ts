@@ -38,6 +38,10 @@ const config: Config[] = [{
   name: "projection-mapping",
   width: "w-40",
   tags: ["webgl2", "projection mapping"]
+},{
+  name: "shadow-mapping",
+  width: "w-40",
+  tags: ["webgl2", "shadow mapping"]
 },];
 
 export default config;

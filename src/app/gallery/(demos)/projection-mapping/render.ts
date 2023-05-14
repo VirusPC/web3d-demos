@@ -463,19 +463,6 @@ export function render(canvas: HTMLCanvasElement): Controller[] {
       }
       render();
     }
-  }, {
-    type: "checkbox",
-    label: "",
-    options: [{label: "perspective", value: "perspective"}],
-    default: ["perspective"],
-    callback: (values) => {
-      if(values.length === 1) {
-        settings.perspective = true;
-      } else {
-        settings.perspective = false;
-      }
-      render();
-    }
   }]
 }
   //   { type: 'checkbox', key: 'perspective', change: render, },
