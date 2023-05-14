@@ -34,6 +34,10 @@ const config: Config[] = [{
   name: "bezier-curve",
   width: "w-40",
   tags: ["webgl2", "bezier curve"]
-}, ];
+}, {
+  name: "projection-mapping",
+  width: "w-40",
+  tags: ["webgl2", "projection mapping"]
+},];
 
 export default config;

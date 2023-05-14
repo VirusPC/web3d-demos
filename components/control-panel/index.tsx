@@ -26,7 +26,11 @@ const ControlPanel: React.FC<Props> = ({ id, className, controllers = [] }) => {
   return (<div className={classNames("w-full", className)}>
     {controllers.map(c => {
       return (<div key={c.label} className="flex justify-center align-middle">
-        <label htmlFor={`id-${c.label}`} className="text-center align-middle h-full m-2">{c.label}</label>
+        {
+          c.label.length>0
+          ?<label htmlFor={`id-${c.label}`} className="text-center align-middle h-full m-2">{c.label}</label>
+          :<></>
+        }
         {c.type === "boolean"
           ? <Switch id={`id-${c.label}`} className="w-full" defaultChecked={c.default} onChange={c.callback} />
           : c.type === "number"
