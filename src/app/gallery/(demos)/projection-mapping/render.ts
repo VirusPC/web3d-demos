@@ -38,6 +38,8 @@ void main() {
   // Pass the texture coord to the fragment shader.
   v_texcoord = a_texcoord;
 
+  // 对于world space下的顶点, 将其转向texture, 向texture投影到clip space, 并将坐标空间从[-1, 1]转到[0, 1].
+  // 就得到了将顶点投影到纹理上的纹理坐标.
   v_projectedTexcoord = u_textureMatrix * worldPosition;
 }
 `;
@@ -56,8 +58,10 @@ uniform sampler2D u_projectedTexture;
 out vec4 outColor;
 
 void main() {
+  // 参考perspective, 令最后一项为1.
   vec3 projectedTexcoord = v_projectedTexcoord.xyz / v_projectedTexcoord.w;
 
+  // 判断是否投影到了texture上
   bool inRange = 
       projectedTexcoord.x >= 0.0 &&
       projectedTexcoord.x <= 1.0 &&
