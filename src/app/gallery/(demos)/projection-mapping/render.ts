@@ -5,10 +5,14 @@ import { degToRad, loadImageTexture } from "../../../../../helpers";
 import { Controller } from "../../../../../components/control-panel/types";
 
 /**
- * 核心：假设某个位置有一个texture面（类似camera），想办法将物体顶点投影回这个面
- * 1. 视空间中texture的中心点为一个相机，将顶点旋转到相机前
- * 2. 顶点向texture投影
- * 3. 将[-1, 1]的clip空间坐标变换到[0, 1]
+ * 对于world space下物体每个顶点
+ * 1. 转到摄像机正前方，投影，得到clip space下的坐标。
+ * 2. 转到要投影的texture正前方，投影，得到texture坐标。
+ *    核心：假设某个位置有一个texture面（类似camera），想办法将物体顶点投影回这个面
+ *    1. 视空间中texture的中心点为一个相机，将顶点旋转到相机前
+ *    2. 顶点向texture投影
+ *    3. 将[-1, 1]的clip空间坐标变换到[0, 1]
+ * 注意在fragment shader中通过inRange判断该点是否能够投影到texture上。
  * 
  * 核心方法在drawScene、vs和fs里
  */
