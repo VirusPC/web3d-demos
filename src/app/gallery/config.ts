@@ -42,6 +42,10 @@ const config: Config[] = [{
   name: "shadow-mapping",
   width: "w-40",
   tags: ["webgl2", "shadow mapping"]
+}, {
+  name: "border",
+  width: "w-40",
+  tags: ["three.js", "border"]
 }// __plop_insert_point__
 ];
 
