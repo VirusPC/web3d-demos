@@ -42,7 +42,7 @@ const config: Config[] = [{
   name: "shadow-mapping",
   width: "w-40",
   tags: ["webgl2", "shadow mapping"]
-}
+}// __plop_insert_point__
 ];
 
 export default config;
