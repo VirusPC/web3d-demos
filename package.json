@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "new": "plop new"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.14",
@@ -30,5 +31,8 @@
     "three": "^0.152.0",
     "twgl.js": "^5.3.1",
     "typescript": "5.0.4"
+  },
+  "devDependencies": {
+    "plop": "^3.1.2"
   }
 }
