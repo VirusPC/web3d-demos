@@ -1,6 +1,5 @@
-import {  Camera, Material, MeshRenderer, PrimitiveMesh, Script, Shader, Vector2, Vector3, WebGLEngine} from "@galacean/engine";
+import {  Camera, Material, MeshRenderer, Pointer, PrimitiveMesh, Script, Shader, ShaderData, Vector2, Vector3, Vector4, WebGLEngine} from "@galacean/engine";
 import { Controller } from "../components/control-panel/types";
-
 
 const vertexSource = `
   uniform mat4 renderer_MVPMat;
@@ -27,6 +26,12 @@ const vertexSource = `
 // `;
 
 
+/**
+ * TODO: iChannel/iMouse
+ * @param canvas 
+ * @param shaderToySource 
+ * @returns 
+ */
 export function getShaderToyRender(canvas: HTMLCanvasElement, shaderToySource: string){
   const fragmentSource = `
     uniform vec4 iResolution;
@@ -70,8 +75,30 @@ export function getShaderToyRender(canvas: HTMLCanvasElement, shaderToySource: s
   
       const shaderData = material.shaderData;
       shaderData.setVector2("iResolution", new Vector2(engine.canvas.width, engine.canvas.height));
+      shaderData.setFloat("iSampleRate", engine.targetFrameRate);
   
       shaderToy.addComponent(ShaderToyScript);
+
+      const bbox = canvas.getBoundingClientRect();
+
+      let isClicked = 0;
+      let isContextClicked = 0;
+      canvas.addEventListener('pointerdown', (evt) => {
+        isClicked = 1;
+      });
+      canvas.addEventListener('pointerdown', (evt) => {
+        isClicked = 0;
+      });
+      const poitnerEvents: ("pointerdown" | "pointermove" | "pointerup")[]= ['pointerdown', 'pointermove', 'pointerup'];
+      poitnerEvents.forEach((evtName) => {
+        canvas.addEventListener(evtName, (evt: PointerEvent) => {
+          shaderData?.setVector4("iMouse", new Vector4(
+            (evt.x-bbox.x) / cameraComponent.aspectRatio, 
+            (evt.y-bbox.y) / cameraComponent.aspectRatio, 
+            isClicked, 0));
+        });
+
+      });
   
       engine.run();
     });
@@ -84,11 +111,38 @@ export function getShaderToyRender(canvas: HTMLCanvasElement, shaderToySource: s
 
 class ShaderToyScript extends Script {
   iTime: number = 0;
+  iFrame: number = 0;
   onUpdate(deltaTime: number): void {
     const renderer = this.entity.getComponent(MeshRenderer);
     const material = renderer?.getMaterial();
     const shaderData = material?.shaderData;
+
     this.iTime+=deltaTime;
+    this.iFrame++;
+
+    shaderData?.setFloat("iTimeDelta", deltaTime);
     shaderData?.setFloat("iTime", this.iTime);
+    shaderData?.setInt("iFrame", this.iFrame);
+    const date = new Date();
+    shaderData?.setVector4("iDate", new Vector4(
+      date.getFullYear(), 
+      date.getMonth(), 
+      date.getDate(),
+      (date.getHours() * 60 + date.getMinutes()) * 60 +date.getSeconds()
+      ));
   }
+  // onPointerDown(pointer: Pointer): void {
+  //   const renderer = this.entity.getComponent(MeshRenderer);
+  //   const material = renderer?.getMaterial();
+  //   const shaderData = material?.shaderData;
+  //   // TODO: right click
+  //   shaderData?.setVector4("iMouse", new Vector4(pointer.position.x, pointer.position.y, 1, 0));
+  // }
+  // onPointerUp(pointer: Pointer): void {
+  //   const renderer = this.entity.getComponent(MeshRenderer);
+  //   const material = renderer?.getMaterial();
+  //   const shaderData = material?.shaderData;
+  //   // TODO: right click
+  //   shaderData?.setVector4("iMouse", new Vector4(pointer.position.x, pointer.position.y, 0, 0));
+  // }
 }
