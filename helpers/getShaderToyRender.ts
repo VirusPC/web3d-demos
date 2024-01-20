@@ -27,7 +27,7 @@ const vertexSource = `
 
 
 /**
- * TODO: iChannel/iMouse
+ * TODO: iChannel/iMouse(right click)
  * @param canvas 
  * @param shaderToySource 
  * @returns 
