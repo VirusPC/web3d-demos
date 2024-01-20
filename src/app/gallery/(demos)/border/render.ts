@@ -1,5 +1,6 @@
 import { Controller } from "../../../../../components/control-panel/types";
-import * as THREE from 'three';
+import * as THREE from "three";
+import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader";
 
 const vertexShader = `
 varying vec3 vPos;
@@ -84,6 +85,10 @@ export function render(canvas: HTMLCanvasElement): Controller[] {
     renderer.render( scene, camera );
   }
   animate();
+
+  new MTLLoader().load("123", (mtl) => {
+    const a: MTLLoader.MaterialCreator = mtl;
+  });
 
   return [];
 }

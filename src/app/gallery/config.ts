@@ -46,6 +46,10 @@ const config: Config[] = [{
   name: "border",
   width: "w-40",
   tags: ["three.js", "border"]
+}, {
+  name: "ray-marching",
+  width: "w-40",
+  tags: ["ray tracing","ray marching","shadow"]
 }// __plop_insert_point__
 ];
 

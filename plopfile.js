@@ -15,11 +15,12 @@ module.exports = function (plop) {
         }, {
             type: 'input',
             name: 'tags',
-            message: 'Tags please',
+            message: 'Tags please, seperated by commas',
         }],
         actions: (answers) => {
-          const {name, tags} = answers;
-          let tagsArr = JSON.parse(tags);
+          const {_name, _tags} = answers;
+          const name = _name.trim().split(" ").map(subName => subName.trim()).join("-")
+          let tagsArr = _tags.trim().split(",").map(tag =>tag.trim());//JSON.parse(tags);
           if(!Array.isArray(tagsArr)) tagsArr = [];
           else tagsArr = tagsArr.map(item => "" + item)
           return [{
